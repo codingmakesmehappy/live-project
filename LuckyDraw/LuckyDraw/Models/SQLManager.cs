@@ -26,7 +26,7 @@ namespace LuckyDraw.Models
 
         public SQLManager()
         {
-            conn.ConnectionString = $"server = .;uid = gleaner;pwd = glean979; database = LuckDraw";
+            conn.ConnectionString = $"server = .;uid = uid;pwd = pwd; database = LuckDraw";
         }
 
         /// <summary>
