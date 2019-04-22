@@ -1,2 +1,4 @@
 # live-project
 软工实践git实训
+
+安装项目前，请先使用sql server导入sql脚本，并修改LuckyDraw/Models/SQLManager.cs文件中SQLManager无参构造函数的链接数据库uid及pwd为自己本地数据库的账号密码(由于上传到github，此处我们把链接uid和pwd去除)
