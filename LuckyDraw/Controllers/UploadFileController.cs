@@ -143,5 +143,10 @@ namespace LuckyDraw.Controllers
             bitmap.Dispose();
             image.Dispose();
         }
+
+        public string Options()
+        {
+            return null;
+        }
     }
 }

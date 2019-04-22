@@ -27,5 +27,10 @@ namespace LuckyDraw.Controllers
             List<Person> list = Option.getAwardInfo();
             return Json(new { status=list==null?"failed":"success",list=list},JsonRequestBehavior.AllowGet);
         }
+
+        public string Options()
+        {
+            return null;
+        }
     }
 }
