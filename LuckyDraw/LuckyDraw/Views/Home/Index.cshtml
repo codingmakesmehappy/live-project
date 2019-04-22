@@ -1,0 +1,85 @@
+﻿
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Index</title>
+    <script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
+    <script>
+        function luckyDraw() {
+            $.ajax({
+                type: "get",
+                url: "/option/luckyDraw",
+                data: {
+                    filter: document.getElementById('filter').value,
+                    key: document.getElementById('key').value,
+                    start: document.getElementById('start').value,
+                    end: document.getElementById('end').value,
+                    open: document.getElementById('open').value,
+                    prize: document.getElementById('prize').value,
+                    count: document.getElementById('count').value,
+                },
+                success: function (data) {
+                    if (data.status=="success") {
+                        alert("发布成功");
+                    }
+                    else {
+                        alert("发布失败");
+                    }
+                },
+                fail: function () {
+                    console.log("function fail");
+                }
+            });
+        }
+        function getAwardInfo() {
+            $.ajax({
+                type: "get",
+                url: "/option/getAwardInfo",
+                data: {},
+                success: function (data) {
+                    console.log(data);
+                    if (data.status == "success") {
+                        alert("获取成功");
+                        var div = document.getElementById("table");
+                        var str = "<table><tr><th>qq</th><th>昵称</th><th>奖品</th><th>有效发言次数</th></tr>";
+                        div.innerHTML = "<table><th><td>qq</td><td>昵称</td><td>奖品</td><td>有效发言次数</td></th>";
+                        for (var i = 0; i < data.list.length; ++i) {
+                            str += "<tr><td>" + data.list[i]["qq"] + "</td><td>" + data.list[i]["nickname"] + "</td><td>"
+                                + data.list[i]["prize"] + "</td><td>" + data.list[i]["speakNum"] + "</tr>";
+                        }
+                        str += "</table>";
+                        div.innerHTML = str;
+                    }
+                    else {
+                        alert("获取失败");
+                    }
+                },
+                fail: function () {
+                    console.log("function fail");
+                }
+            });
+        }
+    </script>
+</head>
+<body>
+    <div>
+        <p>过滤条件<input type="text" id="filter" /></p>
+        <p>关键词<input type="text" id="key" /></p>
+        <p>开始时间<input type="datetime" id="start" /></p>
+        <p>结束时间<input type="datetime" id="end" /></p>
+        <p>开奖时间<input type="datetime" id="open" /></p>
+        <p>奖品<input type="text" id="prize" /></p>
+        <p>抽奖人数<input type="number" id="count" /></p>
+        <button onclick="luckyDraw()">发布抽奖</button>
+        <br />
+        <button onclick="getAwardInfo()">获取抽奖结果</button>
+        <div id="table"></div>
+    </div>
+</body>
+</html>
