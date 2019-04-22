@@ -10,63 +10,121 @@ namespace LuckyDraw.Models
 {
     public class MessageHandler
     {
-        public static string ReadMessage(HttpPostedFileBase file,string filePath)
+        public static string ReadMessage(HttpPostedFileBase file,string filePath,string choice)
         {
             if (file != null)
             {
-                //得到的名字是文件在本地机器的绝对路径
-                var strLocalFullPathName = file.FileName;
-                //提取出单独的文件名，不需要路径
-                var strFileName = Path.GetFileName(strLocalFullPathName);
-                var ext = strFileName.Substring(strFileName.LastIndexOf('.') + 1);
-                if (!ext.Equals("txt"))  //只允许上传txt
-                    return "failed";
-                if (!Directory.Exists(filePath))
+                if (choice.Equals("1"))
                 {
-                    Directory.CreateDirectory(filePath);
-                }
-                if(File.Exists(Path.Combine(filePath, strFileName))){
-                    return "exists";
-                }
-                SQLManager sl = new SQLManager();
-                //将接收到文件保存在服务器指定上当
-                file.SaveAs(Path.Combine(filePath, strFileName));
-
-                StreamReader reader = new StreamReader(Path.Combine(filePath, strFileName));
-                string line;
-                line = reader.ReadLine();
-                while (true)
-                {
-                    if (line == null)
-                        break;
-                    if (isTitle(line))
+                    //得到的名字是文件在本地机器的绝对路径
+                    var strLocalFullPathName = file.FileName;
+                    //提取出单独的文件名，不需要路径
+                    var strFileName = Path.GetFileName(strLocalFullPathName);
+                    var ext = strFileName.Substring(strFileName.LastIndexOf('.') + 1);
+                    if (!ext.Equals("txt"))  //只允许上传txt
+                        return "failed";
+                    if (!Directory.Exists(filePath))
                     {
-                        string[] arr = line.Split(' ');
-                        string datetime = arr[0] + " " + arr[1] + ".000";
-                        string[] arr2 = arr[2].Split('(');
-                        string qq;
-                        if (arr2.Length > 1)
-                            qq = arr2[1].Split(')')[0];
-                        else
-                        {
-                            arr2 = arr[2].Split('<');
-                            qq= arr2[1].Split('>')[0];
-                        }
-                            
-                        string nickname = arr2[0];
-                        string contain = "";
-                        while ((line = reader.ReadLine())!=null&&!isTitle(line))
-                        {
-                            contain += line;
-                        }
-                        
-                        sl.Insert("message", "qq", "nickname", "publish_time", "contain",qq ,nickname , datetime, contain);
+                        Directory.CreateDirectory(filePath);
                     }
-                }
+                    if (File.Exists(Path.Combine(filePath, strFileName)))
+                    {
+                        File.Delete(Path.Combine(filePath, strFileName));
+                    }
+                    SQLManager sl = new SQLManager();
+                    sl.UniversalSetAPI("delete from message");
+                    //将接收到文件保存在服务器指定上当
+                    file.SaveAs(Path.Combine(filePath, strFileName));
 
-                return "success";
+                    StreamReader reader = new StreamReader(Path.Combine(filePath, strFileName));
+                    string line;
+                    line = reader.ReadLine();
+                    while (true)
+                    {
+                        if (line == null)
+                            break;
+                        if (isTitle(line))
+                        {
+                            string[] arr = line.Split(' ');
+                            string datetime = arr[0] + " " + arr[1] + ".000";
+                            string[] arr2 = arr[2].Split('(');
+                            string qq;
+                            if (arr2.Length > 1)
+                                qq = arr2[1].Split(')')[0];
+                            else
+                            {
+                                arr2 = arr[2].Split('<');
+                                qq = arr2[1].Split('>')[0];
+                            }
+
+                            string nickname = arr2[0];
+                            string contain = "";
+                            while ((line = reader.ReadLine()) != null && !isTitle(line))
+                            {
+                                contain += line;
+                            }
+
+                            sl.Insert("message", "qq", "nickname", "publish_time", "contain", qq, nickname, datetime, contain);
+                        }
+                    }
+                    reader.Close();
+                    return "success";
+                }
+                else
+                {
+                    //得到的名字是文件在本地机器的绝对路径
+                    var strLocalFullPathName = file.FileName;
+                    //提取出单独的文件名，不需要路径
+                    var strFileName = Path.GetFileName(strLocalFullPathName);
+                    var ext = strFileName.Substring(strFileName.LastIndexOf('.') + 1);
+                    if (!ext.Equals("txt"))  //只允许上传txt
+                        return "failed";
+                    if (!Directory.Exists(filePath))
+                    {
+                        Directory.CreateDirectory(filePath);
+                    }
+                    if (File.Exists(Path.Combine(filePath, strFileName)))
+                    {
+                        File.Delete(Path.Combine(filePath, strFileName));
+                    }
+                    if (File.Exists(Path.Combine(filePath, strFileName + "_tmp.txt")))
+                    {
+                        File.Delete(Path.Combine(filePath, strFileName + "_tmp.txt"));
+                    }
+                    //将接收到文件保存在服务器指定上当
+                    file.SaveAs(Path.Combine(filePath, strFileName));
+                    StreamReader reader = new StreamReader(Path.Combine(filePath, strFileName));
+                    StreamWriter writer = new StreamWriter(Path.Combine(filePath, strFileName+"_tmp.txt"));
+                    string line;
+                    int i = 0;
+                    while (i++<6) line = reader.ReadLine();
+                    line = reader.ReadLine();
+                    while (true)
+                    {
+                        if (line == null)
+                            break;
+                        if (isTitle(line))
+                        {
+                            string[] arr = line.Split(' ');
+                            string datetime = arr[0] + " " + arr[1];
+                            string contain = "";
+                            while ((line = reader.ReadLine()) != null && !isTitle(line))
+                            {
+                                contain += line;
+                            }
+
+                            writer.WriteLine(datetime+" "+arr[2]+" "+contain);
+                        }
+                    }
+                    reader.Close();
+                    writer.Close();
+                    return "success";
+                }
+                
             }
+
             return "failed";
+
         }
 
         public static bool isTitle(string line)

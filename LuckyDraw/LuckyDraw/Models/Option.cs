@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Web;
 
 namespace LuckyDraw.Models
@@ -22,6 +24,7 @@ namespace LuckyDraw.Models
         private static DateTime start = DateTime.Parse("2022-08-20 00:00:00");
         private static DateTime end = DateTime.Parse("2023-01-01 00:00:00");
         private static DateTime open = DateTime.Parse("2023-01-01 12:00:00");
+        private static Dictionary<string, List<string>> map = new Dictionary<string, List<string>>();
 
         public static void setFilter(string f)
         {
@@ -82,17 +85,24 @@ namespace LuckyDraw.Models
                 return false;
             }else if (filter == Filter.normal)
             {
-                if (message.nickname.Trim().Equals("助教") || message.nickname.Trim().Equals("教师") || message.contain.Trim().Equals(""))
+                if (message.nickname.Trim().Equals("系统消息") || message.nickname.Trim().Equals("助教") || message.nickname.Trim().Equals("教师") || message.contain.Trim().Equals(""))
                     return false;
                 return true;
             }
             else
             {
-                return false;
+                if (message.nickname.Trim().Equals("系统消息") || message.nickname.Trim().Equals("助教") || message.nickname.Trim().Equals("教师"))
+                    return false;
+                return true;
             }
             
         }
 
+        public static bool deepFilte(string contain)
+        {
+            return contain.Trim().Equals("") || contain.Trim().Contains("出租") || Regex.IsMatch(contain.Trim(), "\\s*[\\[表情\\]]+\\s*")
+                || contain.Trim().Contains("招聘") || contain.Trim().Contains("支付宝") || contain.Trim().Contains("兼职") || contain.Trim().Contains("家教");
+        }
         /// <summary>
         /// 加权随机抽一个
         /// </summary>
@@ -125,12 +135,24 @@ namespace LuckyDraw.Models
         /// </summary>
         /// <param name="dic"></param>
         /// <returns></returns>
-        public static Award randomPrize(Dictionary<string,Join> dic)
+        public static Award randomPrize(Dictionary<string,Join> dic,string path)
         {
             List<Join> joins = new List<Join>();
             Award award = new Award();
             award.title = canPrizeStr;
-            foreach(Join join in dic.Values.ToList<Join>())
+            StreamWriter writer;
+            if (!File.Exists(path+"blacklist.txt"))
+            {
+                writer = new StreamWriter(new FileStream(path + "blacklist.txt", FileMode.CreateNew));
+            }
+            else
+            {
+                File.Delete(path + "blacklist.txt");
+                writer = new StreamWriter(new FileStream(path + "blacklist.txt", FileMode.CreateNew));
+            }
+            
+            
+            foreach (Join join in dic.Values.ToList<Join>())
             {
                 if (join.canPrize&&filter==Filter.none)//有效参与者,不过滤
                 {
@@ -146,13 +168,56 @@ namespace LuckyDraw.Models
                 }
                 else if(join.canPrize && filter == Filter.deep && join.datetime_contain.Count > 1)//有效参与者,深度过滤
                 {
-
+                    TimeSpan ts = DateTime.Parse("2030-1-1") - join.publish_time;
+                    join.score = (int)sigmoid(statNumRate * join.datetime_contain.Count + statTimeRate * ts.TotalMilliseconds) * 100;
+                    if (!map.ContainsKey(join.nickname + "(" + join.qq + ")"))//加入灌水名单
+                    {
+                        List<string> list = new List<string>();
+                        map.Add(join.nickname + "(" + join.qq + ")", list);
+                    }
+                    foreach (KeyValuePair<DateTime,string> item in join.datetime_contain)//过滤刷广告，刷空内容，刷表情（检测到灌水则将对应分数-1直到0）
+                    {
+                        if(deepFilte(item.Value))
+                        {
+                            join.score = join.score > 0 ? join.score - 1 : 0;
+                            List<string> list;
+                            if(map.TryGetValue(join.nickname + "(" + join.qq + ")", out list)){
+                                list.Add(item.Value);
+                            }
+                            else
+                            {
+                                list = new List<string>();
+                                list.Add(item.Value);
+                                map.Add(join.nickname + "(" + join.qq + ")", list);
+                            }
+                        }
+                    }
+                    joins.Add(join);
                 }
             }
+            
+            foreach (KeyValuePair<string, List<string>> item in map)//写入灌水黑名单
+            {
+                List<string> info = item.Value;
+                writer.WriteLine("----------------------------------------------");
+                writer.WriteLine("灌水者:" + item.Key);
+                writer.WriteLine("灌水内容如下");
+                foreach (string str in info)
+                {
+                    writer.WriteLine(str);
+                }
+            }
+            map = new Dictionary<string, List<string>>();
+            writer.Close();
             int prizeNum = count;
             for (int i = 0; i < prizeNum; ++i)//开始抽取
             {
-                award.awardList.Add(weightedRandom(ref joins));
+                try
+                {
+                    award.awardList.Add(weightedRandom(ref joins));
+                }
+                catch (Exception) { }
+                
             }
             return award;
         }
@@ -167,7 +232,7 @@ namespace LuckyDraw.Models
             return 1.0 / (1 + Math.Exp(-val));
         }
 
-        public static string LuckyDraw(string filter, string key, DateTime start, DateTime end, DateTime open, string prize, int count)
+        public static string LuckyDraw(string filter, string key, DateTime start, DateTime end, DateTime open, string prize, int count,string path)
         {
             setFilter(filter);
             setKeyWord(key);
@@ -225,7 +290,7 @@ namespace LuckyDraw.Models
                 }
             }
             //抽奖
-            award = randomPrize(dictionary);
+            award = randomPrize(dictionary,path);
             return "success";
         }
 
@@ -236,13 +301,14 @@ namespace LuckyDraw.Models
             {
                 for (int i = 0; i < award.awardList.Count; ++i)
                 {
-                    list.Add(new Person()
-                    {
-                        qq = award.awardList[i].qq,
-                        nickname = award.awardList[i].nickname,
-                        prize = award.awardList[i].prize,
-                        speakNum= award.awardList[i].datetime_contain.Count,
-                    });
+                    if(award.awardList[i]!=null)
+                        list.Add(new Person()
+                        {
+                            qq = award.awardList[i].qq,
+                            nickname = award.awardList[i].nickname,
+                            prize = award.awardList[i].prize,
+                            speakNum = award.awardList[i].datetime_contain.Count
+                        });
                 }
                 return list;
             }
