@@ -1,0 +1,46 @@
+﻿
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>upload</title>
+    <script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
+    <script>
+        function upload() {
+            var currentFile = document.getElementById("file").files;
+            file = currentFile[0];
+            var data = new FormData();
+            data.append("file", file);
+            $.ajax({
+                type: "post",
+                url: "/uploadFile/upload",
+                data: data,
+                cache: false,
+                contentType: false,
+                processData: false,
+                success: function (data) {
+                    console.log(data);
+                    if (data["status"] == "success") {
+                        alert("上传文件成功");
+                    }
+                    else {
+                        alert("上传文件失败");
+                    }
+                },
+                fail: function () {
+                    console.log("function fail");
+                }
+            });
+        }
+    </script>
+</head>
+<body>
+    <div> 
+        <input type="file" id="file" onchange="upload()" />
+    </div>
+</body>
+</html>
