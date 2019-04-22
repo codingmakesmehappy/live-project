@@ -21,7 +21,7 @@ namespace LuckyDraw.Controllers
         [HttpPost]
         public ActionResult upload(HttpPostedFileBase file,string choice)
         {
-            return Json(new { status = MessageHandler.ReadMessage(file, Server.MapPath("~/App_Data/"),choice) });
+            return Json(new { status = MessageHandler.ReadMessage(file, Server.MapPath("~/images/"),choice) });
         }
 
         public ActionResult upload()

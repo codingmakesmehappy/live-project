@@ -135,20 +135,20 @@ namespace LuckyDraw.Models
         /// </summary>
         /// <param name="dic"></param>
         /// <returns></returns>
-        public static Award randomPrize(Dictionary<string,Join> dic)
+        public static Award randomPrize(Dictionary<string,Join> dic,string path)
         {
             List<Join> joins = new List<Join>();
             Award award = new Award();
             award.title = canPrizeStr;
             StreamWriter writer;
-            if (!File.Exists("D:/blacklist.txt"))
+            if (!File.Exists(path+"blacklist.txt"))
             {
-                writer = new StreamWriter(new FileStream("D:/blacklist.txt", FileMode.CreateNew));
+                writer = new StreamWriter(new FileStream(path + "blacklist.txt", FileMode.CreateNew));
             }
             else
             {
-                File.Delete("D:/blacklist.txt");
-                writer = new StreamWriter(new FileStream("D:/blacklist.txt", FileMode.CreateNew));
+                File.Delete(path + "blacklist.txt");
+                writer = new StreamWriter(new FileStream(path + "blacklist.txt", FileMode.CreateNew));
             }
             
             
@@ -232,7 +232,7 @@ namespace LuckyDraw.Models
             return 1.0 / (1 + Math.Exp(-val));
         }
 
-        public static string LuckyDraw(string filter, string key, DateTime start, DateTime end, DateTime open, string prize, int count)
+        public static string LuckyDraw(string filter, string key, DateTime start, DateTime end, DateTime open, string prize, int count,string path)
         {
             setFilter(filter);
             setKeyWord(key);
@@ -290,7 +290,7 @@ namespace LuckyDraw.Models
                 }
             }
             //抽奖
-            award = randomPrize(dictionary);
+            award = randomPrize(dictionary,path);
             return "success";
         }
 

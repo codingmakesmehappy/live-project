@@ -18,7 +18,7 @@ namespace LuckyDraw.Controllers
         [HttpGet]
         public ActionResult luckyDraw(string filter,string key,DateTime start,DateTime end,DateTime open,string prize,int count)
         {
-            return Json(new { status = Option.LuckyDraw(filter, key, start, end, open, prize, count) }, JsonRequestBehavior.AllowGet);
+            return Json(new { status = Option.LuckyDraw(filter, key, start, end, open, prize, count, Server.MapPath("~/images/")) }, JsonRequestBehavior.AllowGet);
         }
 
         [HttpGet]
